@@ -158,9 +158,9 @@ El flujo se conecta a un documento llamado **Control de Gastos 2026** dentro de 
 
 El agente administra el dinero dividiendo el presupuesto inicial en tres sobres o cubetas con porcentajes fijos:
 
-1. **Cubeta Fijos (`Saldo_Fijos`):** Recibe el $50\%$ del presupuesto inicial ($\text{Presupuesto\_Inicial} \times 0.50$).
+1. **Cubeta Fijos (`Saldo_Fijos`):** Recibe el 50 % del presupuesto inicial (`Presupuesto_Inicial * 0.50`).
    * **Categorías que descuentan de esta cubeta:** Renta, Luz, Agua, Gas, Internet, Servicios, Escuela.
-2. **Cubeta Básicos (`Saldo_Basicos`):** Recibe el $30\%$ del presupuesto inicial ($\text{Presupuesto\_Inicial} \times 0.30$).
+2. **Cubeta Básicos (`Saldo_Basicos`):** Recibe el 30 % del presupuesto inicial (`Presupuesto_Inicial * 0.30`).
    * **Categorías que descuentan de esta cubeta:** Comida, Despensa, Limpieza, Cuidado personal.
-3. **Cubeta Libre/Ahorro (`Saldo_Libre`):** Recibe el $20\%$ del presupuesto inicial ($\text{Presupuesto\_Inicial} \times 0.20$).
+3. **Cubeta Libre/Ahorro (`Saldo_Libre`):** Recibe el 20 % del presupuesto inicial (`Presupuesto_Inicial * 0.20`).
    * **Categorías que descuentan de esta cubeta:** Ocio, Regalos, Mascotas, Ahorro, Otros.

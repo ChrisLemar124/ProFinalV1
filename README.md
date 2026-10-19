@@ -164,4 +164,3 @@ El agente administra el dinero dividiendo el presupuesto inicial en tres sobres 
    * **Categorías que descuentan de esta cubeta:** Comida, Despensa, Limpieza, Cuidado personal.
 3. **Cubeta Libre/Ahorro (`Saldo_Libre`):** Recibe el $20\%$ del presupuesto inicial ($\text{Presupuesto\_Inicial} \times 0.20$).
    * **Categorías que descuentan de esta cubeta:** Ocio, Regalos, Mascotas, Ahorro, Otros.
-

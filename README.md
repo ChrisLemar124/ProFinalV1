@@ -1,1 +1,4 @@
-dentro de nuestro proyectoo DC-
+la prioridad de nuestro proyecto DC-Organizador de gastos, es ayudar a los usuarios a llevar un registro de su ingresos y gastos automatizando dicho proceso por medio de mensajeria de texto, para facilitar y mejorar la experiencia de los usuarios de una manera mas amigable y rapida. 
+¿como se implementa el desarrollo de este proyecto?
+para poder realizar este proyeto se llevo a cabo una previa investigacion de las tecnologias, posibilidades y conceptos.
+princpalmente se creo la API por medio de Telegram, la cual tiene como funcion el recibir y enviar mensajes al sistema de automatizado. en ella se creo el chatbot, el cual se encarga de recibir la informacion que pasara durante el proceso de gestion de N8N, plataforma que se encarga de la automatizacion para conectar servicio, bases de datos, aplicaciones e inteligencia artificial, gracias a el pueden trabajar en conjunto de manera mas visual y versatil sin tener que realizar manualmente las tareas por medio de un flujo de trabajo.

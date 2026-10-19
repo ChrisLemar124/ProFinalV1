@@ -1,0 +1,483 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "981765c0-67e5-4b54-953a-cd522be87c80",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "0df60492-b445-4a0c-b4ac-11a699aa260f",
+      "credentials": {
+        "telegramApi": {
+          "id": "q1xoxYRudblBukbg",
+          "name": "Telegram account 2"
+        }
+      },
+      "notes": "Eres un asistente financiero personal especializado en estructurar gastos e ingresos. Tu objetivo es analizar el texto plano o la imagen del ticket de compra/movimiento que te envíe el usuario y extraer la información en un formato JSON estricto.\n\n### CATEGORÍAS PERMITIDAS:\nDebes clasificar la transacción ÚNICAMENTE en una de las siguientes categorías:\n- Renta\n- Servicios\n- Limpieza\n- Cuidado personal\n- Escuela\n- Regalos\n- Ahorro\n- Mascotas\n- Otros (Usa esta solo si definitivamente no encaja en ninguna de las anteriores)\n\n### REGLAS DE INTERPRETACIÓN:\n1. **Tipo de Movimiento:** \n   - Si la entrada resta dinero (un gasto, un pago de renta, un ticket de compra), el tipo debe ser \"Gasto\" (o signo negativo en la cantidad).\n   - Si la entrada suma dinero (un abono, devolución o ajuste positivo como \"renta +100\"), el tipo debe ser \"Ingreso\" (o signo positivo).\n2. **Monto:** Extrae solo el valor numérico, sin signos de moneda ($) ni comas de miles. Si es un gasto, asegúrate de indicarlo correctamente.\n3. **Fecha:** Extrae o asigna la fecha del comprobante en formato YYYY-MM-DD. Si no hay fecha en el texto/ticket, utiliza la palabra \"HOY\".\n4. **Tienda/Concepto:** Nombre del establecimiento o una descripción breve del gasto (ej. \"Pago de renta\", \"Walmart\", \"Veterinaria\").\n\n### FORMATO DE SALIDA:\nDevuelve ÚNICAMENTE un objeto JSON con la siguiente estructura, sin saludos, ni bloques de código adicionales, ni texto explicativo:\n\n{\n  \"Fecha\": \"YYYY-MM-DD\",\n  \"Concepto\": \"Descripción o nombre de la tienda\",\n  \"Categoria\": \"Categoría asignada según la lista oficial\",\n  \"Tipo\": \"Gasto\" | \"Ingreso\",\n  \"Monto\": 0.00,\n  \"Notas\": \"Detalles adicionales si aplica\"\n}"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "Eres un asistente que clasifica comandos financieros en texto plano. Analiza el mensaje del usuario y extrae la información en un formato JSON estricto.\n\nCATEGORÍAS PERMITIDAS:\n- Renta\n- Servicios\n- Limpieza\n- Personal\n- Escuela\n- Regalos\n- Ahorro\n- Mascotas\n- Otro\n\nREGLAS:\n1. Si el usuario escribe una categoría con un valor (ej: \"Renta -100\", \"Mascotas +500\"), la acción es \"REGISTRAR\".\n2. Si el usuario escribe solo la categoría (ej: \"Renta\", \"Mascotas\"), la acción es \"CONSULTAR\".\n3. Si el usuario escribe \"Resume\" o \"Resumen\" seguido de una categoría (ej: \"Resume Renta\"), la acción es \"RESUMIR\" y la categoría es la que sigue a la palabra Resume.\n4. Extrae el monto respetando el signo (+ o -). Si es consulta o resumen, el monto es 0.\n\nFORMATO DE SALIDA (Devuelve ÚNICAMENTE este JSON sin texto ni bloques de código extra):\n{\n  \"accion\": \"REGISTRAR\" | \"CONSULTAR\" | \"RESUMIR\",\n  \"categoria\": \"Nombre De La Categoria\",\n  \"monto\": 0.00\n}"
+        }
+      },
+      "id": "7dc1a079-5996-4336-97e7-5173447d7ae4",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ],
+      "notes": "Eres un asistente financiero personal especializado en estructurar gastos e ingresos. Tu objetivo es analizar el texto plano o la imagen del ticket de compra/movimiento que te envíe el usuario y extraer la información en un formato JSON estricto.\n\n### CATEGORÍAS PERMITIDAS:\nDebes clasificar la transacción ÚNICAMENTE en una de las siguientes categorías:\n- Renta\n- Servicios\n- Limpieza\n- Cuidado personal\n- Escuela\n- Regalos\n- Ahorro\n- Mascotas\n- Otros (Usa esta solo si definitivamente no encaja en ninguna de las anteriores)\n\n### REGLAS DE INTERPRETACIÓN:\n1. **Tipo de Movimiento:** \n   - Si la entrada resta dinero (un gasto, un pago de renta, un ticket de compra), el tipo debe ser \"Gasto\" (o signo negativo en la cantidad).\n   - Si la entrada suma dinero (un abono, devolución o ajuste positivo como \"renta +100\"), el tipo debe ser \"Ingreso\" (o signo positivo).\n2. **Monto:** Extrae solo el valor numérico, sin signos de moneda ($) ni comas de miles. Si es un gasto, asegúrate de indicarlo correctamente.\n3. **Fecha:** Extrae o asigna la fecha del comprobante en formato YYYY-MM-DD. Si no hay fecha en el texto/ticket, utiliza la palabra \"HOY\".\n4. **Tienda/Concepto:** Nombre del establecimiento o una descripción breve del gasto (ej. \"Pago de renta\", \"Walmart\", \"Veterinaria\").\n\n### FORMATO DE SALIDA:\nDevuelve ÚNICAMENTE un objeto JSON con la siguiente estructura, sin saludos, ni bloques de código adicionales, ni texto explicativo:\n\n{\n  \"Fecha\": \"YYYY-MM-DD\",\n  \"Concepto\": \"Descripción o nombre de la tienda\",\n  \"Categoria\": \"Categoría asignada según la lista oficial\",\n  \"Tipo\": \"Gasto\" | \"Ingreso\",\n  \"Monto\": 0.00,\n  \"Notas\": \"Detalles adicionales si aplica\"\n}"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "id": "4aee0641-869b-487f-a805-6876f589d608",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        96,
+        208
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "REGISTRAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e144ec53-b5c4-48d7-a20e-f039070bcb6c"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5295d538-30ac-44f3-a870-0b0e231c0026",
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "CONSULTAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7a1c2b3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "RESUMIR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e84ba37e-439a-4e8e-a760-1e47b9573652",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ JSON.parse($('AI Agent').item.json.output).categoria }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "Monto": "={{ JSON.parse($('AI Agent').item.json.output).monto }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Monto",
+              "displayName": "Monto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "2d92d930-0d9d-436e-98c1-25cb0374309d",
+      "name": "Append row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        -96
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dtMXzeuhv6ojDUgE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=✅ {{ JSON.parse($('AI Agent').item.json.output).monto > 0 ? 'Ingreso registrado' : 'Gasto registrado' }}\n📌 Categoría: {{ JSON.parse($('AI Agent').item.json.output).categoria }}\n💵 Monto: $ {{ JSON.parse($('AI Agent').item.json.output).monto }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "07416723-bf30-4977-8317-2cf28c41ae3e",
+      "name": "Send a text message1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        -96
+      ],
+      "webhookId": "f168fd39-3bf8-41cc-8dff-687c93bb6534",
+      "credentials": {
+        "telegramApi": {
+          "id": "q1xoxYRudblBukbg",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=279687876#gid=279687876",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ JSON.parse($('AI Agent').item.json.output).categoria }}",
+          "mode": "name"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A1:D2"
+            }
+          }
+        }
+      },
+      "id": "fafa6a97-693b-437a-8ca4-f32c0f9df5f8",
+      "name": "Get row(s) in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dtMXzeuhv6ojDUgE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=💰 Dinero disponible en {{ JSON.parse($('AI Agent').item.json.output).categoria }}: $ {{ $json.Total }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "3bdd4c36-36ba-4941-af6b-7d5ca19ab847",
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        80
+      ],
+      "webhookId": "d94797a5-ecb3-45d5-85f6-692aadd36f1b",
+      "credentials": {
+        "telegramApi": {
+          "id": "q1xoxYRudblBukbg",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=279687876#gid=279687876",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ JSON.parse($('AI Agent').item.json.output).categoria }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "91376e4e-da04-4092-839a-a1df76e9ce04",
+      "name": "Get rows for summary",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        256
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dtMXzeuhv6ojDUgE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cat = JSON.parse($('AI Agent').first().json.output).categoria;\nconst now = new Date();\nconst month = now.getMonth() + 1;\nconst year = now.getFullYear();\nconst monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\nconst mesNombre = monthNames[month - 1];\nconst mon = { Jan:1, Feb:2, Mar:3, Apr:4, May:5, Jun:6, Jul:7, Aug:8, Sep:9, Oct:10, Nov:11, Dec:12 };\n\nfunction parseDate(f) {\n  const s = String(f || '').trim();\n  let m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\n  if (m && m[1] !== 'YYYY') return { y: +m[1], m: +m[2], d: +m[3] };\n  m = s.match(/([A-Za-z]{3}) (\\d{1,2}), (\\d{4})/);\n  if (m) return { y: +m[3], m: mon[m[1]], d: +m[2] };\n  return null;\n}\n\nconst rows = $input.all().map(i => i.json).filter(r => r.Fecha && r.Monto !== undefined && r.Monto !== '');\nconst lines = [];\nlet ingresos = 0;\nlet gastos = 0;\nfor (const r of rows) {\n  const d = parseDate(r.Fecha);\n  if (!d || d.y !== year || d.m !== month) continue;\n  const monto = Number(String(r.Monto).replace(/[^0-9.-]/g, ''));\n  if (isNaN(monto)) continue;\n  if (monto >= 0) ingresos += monto; else gastos += monto;\n  const dd = String(d.d).padStart(2, '0') + '/' + String(d.m).padStart(2, '0');\n  lines.push(dd + '  ' + (monto >= 0 ? '+' : '-') + '$' + Math.abs(monto));\n}\n\nlet text;\nif (lines.length === 0) {\n  text = '📊 Resumen de ' + cat + ' (' + mesNombre + ' ' + year + ')\\nNo hay movimientos este mes.';\n} else {\n  text = '📊 Resumen de ' + cat + ' (' + mesNombre + ' ' + year + ')\\n' + lines.join('\\n') + '\\n\\n⬆️ Ingresos: $' + ingresos + '\\n⬇️ Gastos: $' + Math.abs(gastos) + '\\n🧮 Balance del mes: $' + (ingresos + gastos);\n}\nreturn [{ json: { text } }];"
+      },
+      "id": "26b606bf-8f11-4305-97a2-f632a1bd645f",
+      "name": "Build monthly summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c0001f7a-4c50-463b-b861-d984ad6015b2",
+      "name": "Send summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        256
+      ],
+      "webhookId": "d801c0d7-3924-4ce2-894e-5a7f4b79a063",
+      "credentials": {
+        "telegramApi": {
+          "id": "q1xoxYRudblBukbg",
+          "name": "Telegram account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get rows for summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get rows for summary": {
+      "main": [
+        [
+          {
+            "node": "Build monthly summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build monthly summary": {
+      "main": [
+        [
+          {
+            "node": "Send summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "042b4d17-7b0c-424d-9afc-cfc1753af840",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa16815690d03a0e372b5463c82ad625cc3f306aeafc4f3e350ef919610b1e8f"
+  },
+  "nodeGroups": [],
+  "id": "DviggCTujFA0OhMm",
+  "tags": []
+}

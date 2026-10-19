@@ -133,7 +133,7 @@ Envía la respuesta final generada por el agente de vuelta al chat del usuario e
 La prioridad de nuestro proyecto, DC-Organizador de Gastos, es ayudar a los usuarios a llevar un registro detallado de sus ingresos y egresos, automatizando este proceso a través de mensajería de texto para brindar una experiencia más ágil, amigable y eficiente.
 
 
-## Estructura de Google Sheets para los modelos:: Versión:1
+## Estructura de Google Sheets para los modelos: Versión:1
 El flujo se conecta a un documento llamado **Control de Gastos 2026** dentro de la pestaña **Hoja 1**. La tabla debe contar exactamente con las siguientes 9 columnas en la primera fila:
 
 El flujo se conecta a un documento llamado **Control de Gastos 2026** dentro de la pestaña **Hoja 1**. La tabla debe contar exactamente con las siguientes 9 columnas en la primera fila:
@@ -164,3 +164,97 @@ El agente administra el dinero dividiendo el presupuesto inicial en tres sobres 
    * **Categorías que descuentan de esta cubeta:** Comida, Despensa, Limpieza, Cuidado personal.
 3. **Cubeta Libre/Ahorro (`Saldo_Libre`):** Recibe el 20 % del presupuesto inicial (`Presupuesto_Inicial * 0.20`).
    * **Categorías que descuentan de esta cubeta:** Ocio, Regalos, Mascotas, Ahorro, Otros.
+
+## GurúCinthia v2.0 - Bot de Gestión Financiera en Telegram
+
+**GurúCinthia v2.0** es un flujo de trabajo automatizado integrado en **n8n** que actúa como asistente financiero personal mediante Telegram. Utiliza un Agente de Inteligencia Artificial impulsado por **Google Gemini** para interpretar mensajes del usuario, clasificar transacciones y gestionar el registro o consulta de gastos e ingresos de forma dinámica en **Google Sheets**.
+
+---
+
+## Vista General del Flujo
+
+<img width="1096" height="388" alt="image" src="https://github.com/user-attachments/assets/d0dc6c57-1e44-4124-8206-7abe2b68e305" />
+
+---
+
+## Funcionalidades Principales
+En este apartado decidimos dejarlo a modo de "comandos" que el usuario ingresa para mayor practicidad en el día a día y sea sostenible y poco molesto el registro de los gastos realizados.
+
+* **Registrar movimientos (`REGISTRAR`):** Interpreta montos y categorías asignando gastos (valores negativos) e ingresos (valores positivos) en la hoja de cálculo.
+  * **Sintaxis:** Nombre_de_categoria +cantidad / Nombre_de_categoria -cantidad
+  <img width="646" height="364" alt="image" src="https://github.com/user-attachments/assets/a099d1c2-98d8-4aea-a686-d30a09ce8f5f" />
+   
+* **Consultar saldo por categoría (`CONSULTAR`):** Muestra el saldo o fondos disponibles de una categoría específica.
+  * **Sintaxis:** Nombre_de_categoria
+  <img width="510" height="162" alt="image" src="https://github.com/user-attachments/assets/3bce2c83-e1b4-4a1f-9250-e4bafb9b853d" />
+
+* **Generar resúmenes mensuales (`RESUMIR`):** Calcula automáticamente las entradas, salidas y el balance del mes en curso con desglose de transacciones.
+  * **Sintaxis:** Resume Nombre_de_categoria
+  <img width="514" height="342" alt="image" src="https://github.com/user-attachments/assets/e7ad5684-45a4-4e9e-992b-b77360b3b028" />
+
+* **Google Sheet**: Todo esto, como ya hemos visto, se guarda en un documento de google sheets que está estructurado de este modo:
+  <img width="984" height="926" alt="image" src="https://github.com/user-attachments/assets/6bc64895-51f4-4751-a230-94fabeabfaa8" />
+
+---
+
+## Categorías Permitidas
+
+En esta versión decidimos usar categorías predefinidas con las que usamos en la vida real y que sea apegado a lo que buscamos:
+- `Renta`
+- `Servicios`
+- `Limpieza`
+- `Personal`
+- `Escuela`
+- `Regalos`
+- `Ahorro`
+- `Mascotas`
+- `Otro`
+
+---
+
+## Explicación Detallada de Componentes
+
+### 1. Disparador de Telegram (`Telegram Trigger`)
+* **Tipo:** `n8n-nodes-base.telegramTrigger`
+* **Función:** Escucha en tiempo real los mensajes entrantes en el bot de Telegram y activa la ejecución del flujo cuando el usuario envía un texto o comprobante.
+  <img width="1866" height="855" alt="image" src="https://github.com/user-attachments/assets/113adbda-efb0-45c5-a7d1-5fd2e6b4ac1e" />
+
+### 2. Agente de IA y Modelo de Lenguaje (`AI Agent` + `Google Gemini Chat Model`)
+* **Tipos:** `@n8n/n8n-nodes-langchain.agent` y `@n8n/n8n-nodes-langchain.lmChatGoogleGemini`
+* **Modelo utilizado:** `gemini-3.1-flash-lite`
+* **Función:** Procesa la entrada recibida de Telegram y aplica un prompt de sistema para estructurar la intención en un objeto JSON estándar.
+  <img width="1862" height="878" alt="image" src="https://github.com/user-attachments/assets/5f47939e-00c3-4b71-baaf-29aad4a8a105" />
+
+### 3. Enrutador Lógico (`Switch`)
+* **Tipo:** `n8n-nodes-base.switch`
+* **Función:** Evalúa la propiedad `accion` extraída del JSON generado por el Agente de IA para redirigir el flujo por una de tres rutas:
+  * **Ruta 0 (`REGISTRAR`):** Si la acción es registrar un monto.
+  * **Ruta 1 (`CONSULTAR`):** Si el usuario requiere saldo de una categoría.
+  * **Ruta 2 (`RESUMIR`):** Si el usuario solicita un resumen del mes.
+  <img width="1892" height="859" alt="image" src="https://github.com/user-attachments/assets/003d8352-cf25-40aa-b80c-19410ec7f43c" />
+
+### 4. Rutas de Procesamiento
+
+#### Ruta 0: Registro de Transacción
+* **Agregar fila en la hoja (`Google Sheets`):** Añade la fecha actual (`yyyy-MM-dd`) y el monto ingresado en la pestaña/hoja correspondiente a la categoría.
+* **Enviar mensaje de confirmación (`Telegram`):** Notifica al usuario en Telegram confirmando el registro del ingreso o gasto con el monto correspondiente.
+  <img width="1865" height="850" alt="image" src="https://github.com/user-attachments/assets/bdd657cf-e94a-4e0d-ac38-d893de37cda7" />
+
+#### Ruta 1: Consulta de Saldo
+* **Obtener fila(s) en la hoja (`Google Sheets`):** Lee los datos contenidos en el rango especificado (`A1:D2`) dentro de la pestaña de la categoría solicitada.
+* **Enviar mensaje de respuesta (`Telegram`):** Devuelve al usuario el total disponible calculado en el archivo.
+  <img width="1874" height="853" alt="image" src="https://github.com/user-attachments/assets/677bfb8e-cbb4-471e-9dce-f4128fe3ff10" />
+
+#### Ruta 2: Resumen Mensual
+* **Obtener filas para el resumen (`Google Sheets`):** Lee todas las entradas históricas guardadas en la categoría solicitada.
+* **Elaborar resumen mensual (`Code Node - JavaScript`):** Filtra y procesa los registros del mes y año en curso, calcula sumatorias de ingresos/gastos y formatea la respuesta.
+* **Enviar resumen (`Telegram`):** Envía al chat de Telegram un reporte detallado con el desglose de fechas, montos, total de ingresos, total de gastos y balance final.
+  <img width="1867" height="853" alt="image" src="https://github.com/user-attachments/assets/24750af5-0664-4c2e-bcca-9a12fa1ac46e" />
+
+## Requisitos e Instalación
+
+1. **n8n:** Instancia local o Cloud funcional.
+2. **Bot de Telegram:** Token creado mediante `@BotFather`.
+3. **Google Cloud Console:** Credenciales con acceso habilitado para **Google Sheets API**.
+4. **Google Gemini API Key:** Configurada dentro de las credenciales de n8n.
+  

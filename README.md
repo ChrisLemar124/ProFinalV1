@@ -12,7 +12,7 @@ Para llevar a cabo este proyecto, se realizó una investigación previa sobre la
 El flujo de trabajo está compuesto por una tubería principal de tres nodos (`Telegram Trigger`, `AI Agent` y `Send a text message`) y tres sub-nodos conectados al agente para el procesamiento del lenguaje natural y la lectura/escritura en la hoja de cálculo.
 
 
-![alt text](<WhatsApp Image 2026-10-19 at 12.38.30 AM.jpeg>)
+![alt text](<Archivos/WhatsApp Image 2026-10-19 at 12.38.30 AM.jpeg>)
 
 ## Requisitos Previos
 
@@ -35,7 +35,7 @@ Escucha en tiempo real los mensajes entrantes enviados por el usuario al bot de 
 * **Additional Fields:** `Download: true`
 * **Credencial:** `Telegram account`
 
-![alt text](image-7.png)
+![alt text](Archivos/image-7.png)
 ---
 
 
@@ -57,7 +57,7 @@ Es el núcleo del flujo de trabajo. Recibe el mensaje de Telegram y la fecha act
 3. **Paso 3 (Guardar en Google Sheets):** Ejecuta la herramienta `Modificar_Filas` enviando las 9 columnas actualizadas.
 4. **Paso 4 (Responder):** Devuelve un resumen estructurado en texto plano, sin etiquetas de código ni formato Markdown complejo, con el detalle del movimiento y los saldos actuales.
 
-![alt text](image-2.png)
+![alt text](Archivos/image-2.png)
 
 ---
 
@@ -67,7 +67,7 @@ Proporciona el modelo de lenguaje encargado del razonamiento del agente y la inv
 * **Tipo de nodo:** `@n8n/n8n-nodes-langchain.lmChatGoogleGemini`
 * **Model Name:** `models/gemini-3.1-flash-lite`
 
-![alt text](image-3.png)
+![alt text](Archivos/image-3.png)
 
 ---
 
@@ -79,7 +79,7 @@ Herramienta conectada al agente para consultar los registros existentes antes de
 * **Document:** `Control de Gastos 2026`
 * **Sheet:** `Hoja 1` (`gid=0`)
 
-![alt text](image-4.png)
+![alt text](Archivos/image-4.png)
 
 ---
 ### 5. Modificar_Filas (Google Sheets Tool)
@@ -101,7 +101,7 @@ Herramienta conectada al agente para insertar una nueva fila con los saldos actu
   * `Saldo_Libre`: `={{ $fromAI('Saldo_Libre', '', 'string') }}`
   * `Presupuesto_Restante`: `={{ $fromAI('Presupuesto_Restante', '', 'string') }}`
 
-![alt text](image-5.png)
+![alt text](Archivos/image-5.png)
 
 ---
 
@@ -113,7 +113,7 @@ Envía la respuesta final generada por el agente de vuelta al chat del usuario e
 * **Text:** `={{ $json.output }}`
 * **Credencial:** `Telegram account`
 
-![alt text](image-6.png)
+![alt text](Archivos/image-6.png)
 
 ---
 
@@ -150,7 +150,7 @@ El flujo se conecta a un documento llamado **Control de Gastos 2026** dentro de 
 | **H** | `Saldo_Libre` | Saldo disponible en la cubeta de gastos libres o ahorro ($20\%$). |
 | **I** | `Presupuesto_Restante` | Suma total disponible de las tres cubetas actuales. |
 
-![Estructura de las columnas en Google Sheets]![alt text](image-1.png)
+![Estructura de las columnas en Google Sheets](Archivos/image-1.png)
 
 ---
 

@@ -1,5 +1,5 @@
 {
-  "name": "Proyecto",
+  "name": "My workflow 2",
   "nodes": [
     {
       "parameters": {
@@ -10,170 +10,258 @@
           "download": true
         }
       },
+      "id": "733fa920-f32a-4597-b3a4-bdcb0550d94f",
+      "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.5,
       "position": [
-        0,
-        0
+        -208,
+        928
       ],
-      "id": "32ca4993-08c6-4009-8931-8f4aff3ada67",
-      "name": "Telegram Trigger",
-      "webhookId": "3445c37e-29da-47cb-9da3-e3eb29933a6d",
+      "webhookId": "d9c2706c-06ab-4bce-a776-5a1cc026fee9",
       "credentials": {
         "telegramApi": {
           "id": "WWgrCOnGejyxsZbe",
           "name": "Telegram account"
         }
-      }
+      },
+      "notes": "Eres un asistente financiero personal especializado en estructurar gastos e ingresos. Tu objetivo es analizar el texto plano o la imagen del ticket de compra/movimiento que te envíe el usuario y extraer la información en un formato JSON estricto.\n\n### CATEGORÍAS PERMITIDAS:\nDebes clasificar la transacción ÚNICAMENTE en una de las siguientes categorías:\n- Renta\n- Servicios\n- Limpieza\n- Cuidado personal\n- Escuela\n- Regalos\n- Ahorro\n- Mascotas\n- Otros (Usa esta solo si definitivamente no encaja en ninguna de las anteriores)\n\n### REGLAS DE INTERPRETACIÓN:\n1. **Tipo de Movimiento:** \n   - Si la entrada resta dinero (un gasto, un pago de renta, un ticket de compra), el tipo debe ser \"Gasto\" (o signo negativo en la cantidad).\n   - Si la entrada suma dinero (un abono, devolución o ajuste positivo como \"renta +100\"), el tipo debe ser \"Ingreso\" (o signo positivo).\n2. **Monto:** Extrae solo el valor numérico, sin signos de moneda ($) ni comas de miles. Si es un gasto, asegúrate de indicarlo correctamente.\n3. **Fecha:** Extrae o asigna la fecha del comprobante en formato YYYY-MM-DD. Si no hay fecha en el texto/ticket, utiliza la palabra \"HOY\".\n4. **Tienda/Concepto:** Nombre del establecimiento o una descripción breve del gasto (ej. \"Pago de renta\", \"Walmart\", \"Veterinaria\").\n\n### FORMATO DE SALIDA:\nDevuelve ÚNICAMENTE un objeto JSON con la siguiente estructura, sin saludos, ni bloques de código adicionales, ni texto explicativo:\n\n{\n  \"Fecha\": \"YYYY-MM-DD\",\n  \"Concepto\": \"Descripción o nombre de la tienda\",\n  \"Categoria\": \"Categoría asignada según la lista oficial\",\n  \"Tipo\": \"Gasto\" | \"Ingreso\",\n  \"Monto\": 0.00,\n  \"Notas\": \"Detalles adicionales si aplica\"\n}"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Actua como mi asistente financiero personal super profesional. Tu trabajo es administrar su dinero por \"cubetas\" (Sobres de presupuesto), registrar cada ingreso o gasto en Google Sheets usando tus herramientas, y mantenerlo informado de forma clara y amable.\n\nFecha actual: {{ $now.format('YYYY-MM-DD') }}\nMensaje en Telegram: {{ $json.message.text }}\n\n### LAS 3 CUBETAS Y SUS CATEGORÍAS:\n1. CUBETA FIJOS (Saldo_Fijos) -> Recibe el 50% de cada ingreso.\n   - Categorías que restan: Renta, Luz, Agua, Gas, Internet, Servicios, Escuela.\n2. CUBETA BÁSICOS (Saldo_Basicos) -> Recibe el 30% de cada ingreso.\n   - Categorías que restan: Comida, Despensa, Limpieza, Cuidado personal.\n3. CUBETA LIBRE/AHORRO (Saldo_Libre) -> Recibe el 20% de cada ingreso.\n   - Categorías que restan: Ocio, Regalos, Mascotas, Ahorro, Otros.\n\n### PROCESO OBLIGATORIO:\nPASO 1 - LEER HISTORIAL:\nEjecuta SIEMPRE tu herramienta \"Leer_Historial_Gastos\" (Get Rows) para ver la última fila registrada. Necesitas conocer los valores anteriores de: Presupuesto_Inicial, Saldo_Fijos, Saldo_Basicos, Saldo_Libre y Presupuesto_Restante. (Si no hay filas, asume 0 en todo).\nPASO 2 - CALCULAR MOVIMIENTO:\n- CASO A (Reiniciar Presupuesto, ej. \"Mi presupuesto es de 4000\"):\n  * Fecha: {{ $now.format('YYYY-MM-DD') }}\n  * Tienda: \"Nuevo Presupuesto Asignado\"\n  * Categoria: \"Presupuesto\"\n  * Monto: 0\n  * Presupuesto_Inicial = [El monto nuevo que indique, sin sumar el anterior. Ej. 4000]\n  * Nuevo Saldo_Fijos = (Presupuesto_Inicial * 0.50)\n  * Nuevo Saldo_Basicos = (Presupuesto_Inicial * 0.30)\n  * Nuevo Saldo_Libre = (Presupuesto_Inicial * 0.20)\n  * Nuevo Presupuesto_Restante = Suma de las 3 cubetas nuevas.\n\n- CASO B (Gasto por texto o ticket):\n  * Identifica Fecha, Tienda, Categoria y Monto.\n  * El \"Presupuesto_Inicial\" se queda EXACTAMENTE IGUAL que en la fila anterior, nunca cambia.\n  * Identifica a qué cubeta pertenece la categoría y RÉSTALE el Monto SOLO a esa cubeta (las otras dos se quedan igual).\n  * Nuevo Presupuesto_Restante = Suma de las 3 cubetas actualizadas.\nPASO 3 - GUARDAR EN GOOGLE SHEETS:\nEjecuta SIEMPRE tu herramienta \"Modificar_Filas\" enviando exactamente las 9 columnas con los valores que acabas de calcular.\n\nPASO 4 - RESPONDER:\nDevuelve un mensaje amigable, relajado y directo (listo para Telegram) confirmando el registro y mostrando con viñetas claras cómo quedaron sus 3 cubetas y su saldo total. No devuelvas formato JSON, solo el texto natural.\n\nUna vez guardada la fila en Google Sheets, responde ÚNICAMENTE con este formato limpio, corto y directo (sin texto extra antes ni después, y sin usar símbolos raros de Markdown como ** o ``` que puedan romper el mensaje):\n\n✅ Movimiento registrado\n🏪 Concepto: [Tienda]\n🏷️ Categoría: [Categoria] ([Indica de qué cubeta se descontó o si fue Ingreso])\n💸 Monto: $[Monto]\n📅 Fecha: [Fecha]\n\n📊 Tus Cubetas Actuales:\n🏠 Fijos (50%): $[Saldo_Fijos]\n🛒 Básicos (30%): $[Saldo_Basicos]\n🎉 Libre/Ahorro (20%): $[Saldo_Libre]\n\n💰 Presupuesto Inicial: $[Presupuesto_Inicial]\n💵 Total Disponible: $[Presupuesto_Restante]",
-        "options": {}
+        "text": "={{ $('Telegram Trigger').item.json.message.text || $('Telegram Trigger').item.json.message.caption || \"Procesa la imagen de este ticket y extrae los datos en el JSON indicado.\" }}",
+        "options": {
+          "systemMessage": "Eres un asistente que clasifica comandos financieros en texto plano o imágenes de tickets. Analiza el mensaje o imagen del usuario y extrae la información en un formato JSON estricto.\n\nCATEGORÍAS PERMITIDAS:\n- Renta\n- Servicios\n- Limpieza\n- Personal\n- Escuela\n- Regalos\n- Ahorro\n- Mascotas\n- Otro\n\nREGLAS:\n1. Si el usuario escribe una categoría con un valor (ej: \"Renta -100\", \"Mascotas +500\"), la acción es \"REGISTRAR\".\n2. Si el usuario escribe solo la categoría (ej: \"Renta\", \"Mascotas\"), la acción es \"CONSULTAR\".\n3. Si el usuario escribe \"Resume\" o \"Resumen\" seguido de una categoría (ej: \"Resume Renta\"), la acción es \"RESUMIR\" y la categoría es la que sigue a la palabra Resume.\n4. Si el usuario acepta o aprueba un plan de reparto que se le propuso (\"me parece bien\", \"sí, así\"), o pide guardar/registrar/anotar/apuntar el reparto o la lista en el Excel, o dice que ya cayó la quincena y pide repartir el dinero donde va, la acción es \"REPARTIR\". La categoría es \"Ninguna\" y el monto es 0.\n4a. Si el usuario pide ver, recordar o resumir TODOS sus apartados/categorías a la vez (\"cómo van mis apartados\", \"la lista de apartados y cuánto hay en cada uno\", \"cómo vamos de dinero\", \"resumen general\"), la acción es \"RESUMEN_GENERAL\". La categoría es \"Ninguna\" y el monto es 0.\n4b. Cualquier otro mensaje que no sea REGISTRAR, CONSULTAR, RESUMIR, REPARTIR ni RESUMEN_GENERAL es \"PRESUPUESTO\": cuando el usuario cuenta cuánto gana, pide dividir su dinero o planear gastos/ahorro (ej: \"Mi sueldo es 4800 por quincena, pago 1600 de renta...\"), ajusta un plan anterior (\"mejor ahorra 300\"), hace preguntas o platica. La categoría es \"Ninguna\" y el monto es 0.\n5. Extrae el monto respetando el signo (+ o -). Si es consulta o resumen, el monto es 0.\n6. Si recibes una IMAGEN de un ticket o comprobante, lee los datos del ticket (comercio, artículos y total). Clasifícalo con la acción \"REGISTRAR\", asigna la categoría de la lista permitida que mejor corresponda a lo comprado, y pon el total del ticket en \"monto\" con signo negativo (-).\n\nFORMATO DE SALIDA (Devuelve ÚNICAMENTE este JSON sin texto ni bloques de código extra):\n{\n  \"accion\": \"REGISTRAR\" | \"CONSULTAR\" | \"RESUMIR\" | \"REPARTIR\" | \"RESUMEN_GENERAL\" | \"PRESUPUESTO\",\n  \"categoria\": \"Nombre De La Categoria\",\n  \"monto\": 0.00\n}",
+          "passthroughBinaryImages": true
+        }
       },
+      "id": "9cc88650-1356-4ff8-a02a-c19c971f2624",
+      "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        224,
-        0
+        144,
+        528
       ],
-      "id": "ab21310b-85bd-4d98-92a2-87480647ab2d",
-      "name": "AI Agent"
+      "notes": "Eres un asistente financiero personal especializado en estructurar gastos e ingresos. Tu objetivo es analizar el texto plano o la imagen del ticket de compra/movimiento que te envíe el usuario y extraer la información en un formato JSON estricto.\n\n### CATEGORÍAS PERMITIDAS:\nDebes clasificar la transacción ÚNICAMENTE en una de las siguientes categorías:\n- Renta\n- Servicios\n- Limpieza\n- Cuidado personal\n- Escuela\n- Regalos\n- Ahorro\n- Mascotas\n- Otros (Usa esta solo si definitivamente no encaja en ninguna de las anteriores)\n\n### REGLAS DE INTERPRETACIÓN:\n1. **Tipo de Movimiento:** \n   - Si la entrada resta dinero (un gasto, un pago de renta, un ticket de compra), el tipo debe ser \"Gasto\" (o signo negativo en la cantidad).\n   - Si la entrada suma dinero (un abono, devolución o ajuste positivo como \"renta +100\"), el tipo debe ser \"Ingreso\" (o signo positivo).\n2. **Monto:** Extrae solo el valor numérico, sin signos de moneda ($) ni comas de miles. Si es un gasto, asegúrate de indicarlo correctamente.\n3. **Fecha:** Extrae o asigna la fecha del comprobante en formato YYYY-MM-DD. Si no hay fecha en el texto/ticket, utiliza la palabra \"HOY\".\n4. **Tienda/Concepto:** Nombre del establecimiento o una descripción breve del gasto (ej. \"Pago de renta\", \"Walmart\", \"Veterinaria\").\n\n### FORMATO DE SALIDA:\nDevuelve ÚNICAMENTE un objeto JSON con la siguiente estructura, sin saludos, ni bloques de código adicionales, ni texto explicativo:\n\n{\n  \"Fecha\": \"YYYY-MM-DD\",\n  \"Concepto\": \"Descripción o nombre de la tienda\",\n  \"Categoria\": \"Categoría asignada según la lista oficial\",\n  \"Tipo\": \"Gasto\" | \"Ingreso\",\n  \"Monto\": 0.00,\n  \"Notas\": \"Detalles adicionales si aplica\"\n}"
     },
     {
       "parameters": {
-        "modelName": "models/gemini-3.1-flash-lite",
-        "options": {}
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "safetySettings": {
+            "values": [
+              {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_NONE"
+              },
+              {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_NONE"
+              },
+              {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_NONE"
+              },
+              {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_NONE"
+              }
+            ]
+          }
+        }
       },
+      "id": "3ff3f780-992c-4cd4-9d1a-ecf29f4aa512",
+      "name": "Google Gemini Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1.2,
       "position": [
-        96,
-        208
+        144,
+        704
       ],
-      "id": "0a4cbb6a-d506-45ab-8026-18902794f20c",
-      "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": null,
-          "name": "",
-          "__aiGatewayManaged": true
+          "id": "KQfCxuSNGtZpGDkZ",
+          "name": "Google Gemini(PaLM) Api account 3"
         }
       }
     },
     {
       "parameters": {
-        "documentId": {
-          "__rl": true,
-          "value": "1u4gjEoUudVZ8E19pFcxQbfQIvrKqOsNY0NMxu6HZSqM",
-          "mode": "list",
-          "cachedResultName": "Control de Gastos 2026",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u4gjEoUudVZ8E19pFcxQbfQIvrKqOsNY0NMxu6HZSqM/edit?usp=drivesdk"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Hoja 1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u4gjEoUudVZ8E19pFcxQbfQIvrKqOsNY0NMxu6HZSqM/edit#gid=0"
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "REGISTRAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e144ec53-b5c4-48d7-a20e-f039070bcb6c"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5295d538-30ac-44f3-a870-0b0e231c0026",
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "CONSULTAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7a1c2b3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "RESUMIR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8b2d3c4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e",
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "PRESUPUESTO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9c3e4d5f-6a7b-4c8d-8e9f-1a2b3c4d5e6f",
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "REPARTIR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "02234104-175e-4ca2-8b94-ca75720e1d57",
+                    "leftValue": "={{ JSON.parse($json.output).accion }}",
+                    "rightValue": "RESUMEN_GENERAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.googleSheetsTool",
-      "typeVersion": 4.7,
+      "id": "4111509f-c007-477b-8041-7748b8c6d00d",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
       "position": [
-        480,
-        304
-      ],
-      "id": "70ef5797-20a1-4318-a23d-bb4fdaef61d8",
-      "name": "Leer_Historial_Gastos",
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "tEZMNzKNKsHhGytn",
-          "name": "Google Sheets account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
-        "text": "={{ $json.output }}",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        592,
-        0
-      ],
-      "id": "4b9f64f2-f34b-4765-a680-78d79173ae26",
-      "name": "Send a text message",
-      "webhookId": "9dbea994-57f6-42c9-aeb5-41c3f5942e7b",
-      "credentials": {
-        "telegramApi": {
-          "id": "WWgrCOnGejyxsZbe",
-          "name": "Telegram account"
-        }
-      }
+        496,
+        512
+      ]
     },
     {
       "parameters": {
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "1u4gjEoUudVZ8E19pFcxQbfQIvrKqOsNY0NMxu6HZSqM",
-          "mode": "list",
-          "cachedResultName": "Control de Gastos 2026",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u4gjEoUudVZ8E19pFcxQbfQIvrKqOsNY0NMxu6HZSqM/edit?usp=drivesdk"
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=0#gid=0",
+          "mode": "url"
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Hoja 1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u4gjEoUudVZ8E19pFcxQbfQIvrKqOsNY0NMxu6HZSqM/edit#gid=0"
+          "value": "={{ JSON.parse($('AI Agent').item.json.output).categoria }}",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Fecha": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Fecha', ``, 'string') }}",
-            "Tienda": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tienda', ``, 'string') }}",
-            "Monto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Monto', ``, 'string') }}",
-            "Categoria": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Categoria', ``, 'string') }}",
-            "Presupuesto_Restante": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Presupuesto_Restante', ``, 'string') }}",
-            "Saldo_Fijos": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Saldo_Fijos', ``, 'string') }}",
-            "Saldo_Basicos": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Saldo_Basicos', ``, 'string') }}",
-            "Saldo_Libre": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Saldo_Libre', ``, 'string') }}",
-            "Presupuesto_Inicial": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Presupuesto_Inicial', ``, 'string') }}"
+            "Fecha": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "Monto": "={{ JSON.parse($('AI Agent').item.json.output).monto }}"
           },
-          "matchingColumns": [
-            "Presupuesto Inicial"
-          ],
+          "matchingColumns": [],
           "schema": [
             {
               "id": "Fecha",
               "displayName": "Fecha",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Tienda",
-              "displayName": "Tienda",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Categoria",
-              "displayName": "Categoria",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -192,68 +280,8 @@
               "removed": false
             },
             {
-              "id": "Presupuesto_Inicial",
-              "displayName": "Presupuesto_Inicial",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Saldo_Fijos",
-              "displayName": "Saldo_Fijos",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Saldo_Basicos",
-              "displayName": "Saldo_Basicos",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Saldo_Libre",
-              "displayName": "Saldo_Libre",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Presupuesto_Restante",
-              "displayName": "Presupuesto_Restante",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "Presupuesto_Inicial__using_to_match_",
-              "displayName": "Presupuesto_Inicial__using_to_match_",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "Categor_a",
-              "displayName": "Categor_a",
+              "id": "Total",
+              "displayName": "Total",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -267,20 +295,671 @@
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.googleSheetsTool",
+      "id": "fde86777-39c7-4e97-815a-46dc4ca2be0a",
+      "name": "Append row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        592,
-        272
+        976,
+        336
       ],
-      "id": "d294e1c2-761f-4983-8c38-f28e795ac00a",
-      "name": "Modificar_Filas",
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "tEZMNzKNKsHhGytn",
           "name": "Google Sheets account"
         }
       }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=279687876#gid=279687876",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ JSON.parse($('AI Agent').item.json.output).categoria }}",
+          "mode": "name"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A1:D2"
+            }
+          }
+        }
+      },
+      "id": "ad98b995-0548-479c-a0f7-0983086abb75",
+      "name": "Get balance after",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1200,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dtMXzeuhv6ojDUgE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ctx-registro",
+              "name": "contexto",
+              "type": "string",
+              "value": "={{ (() => { const o = JSON.parse($('AI Agent').item.json.output); const total = Number($json.Total); return 'Mensaje del usuario: ' + $('Telegram Trigger').item.json.message.text + '\\nACCION: REGISTRAR\\nCategoría: ' + o.categoria + '\\nMonto: ' + o.monto + ' (negativo = gasto, positivo = ingreso)\\nSaldo disponible ahora en la categoría: ' + total + '\\nSaldo que tenía antes del movimiento: ' + (total - Number(o.monto)); })() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d2da6986-4c93-4e26-b4f5-c977f94e6d07",
+      "name": "Contexto registro",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.contexto }}",
+        "options": {
+          "systemMessage": "Eres \"Mamá\", una señora mexicana clásica, cariñosa pero regañona, que cuida las finanzas de su hija o hijo por Telegram. Hablas SIEMPRE en español mexicano, con modismos y cariño: dices \"mijita\" (o \"mijito\" si el usuario lo indica), \"ándale\", \"ay, Dios mío\", \"¿y eso?\", \"pa' qué te digo\", etc. Respuestas cortas (unas 8 líneas, salvo cuando armes un plan de presupuesto), tono de mamá, un par de emojis como máximo.\n\nRecibirás un mensaje con la ACCION y datos reales de la hoja de cálculo. Usa SOLO esos números, no inventes cifras.\n\nSEGÚN LA ACCION:\n- REGISTRAR: confirma el movimiento (categoría, monto, saldo actual). Si es un gasto (monto negativo) regaña si: el saldo queda en 0 o negativo (regaño fuerte, se pasó del presupuesto), o el gasto se come más de la mitad del saldo que había antes (regaño de compra imprudente), o el saldo queda muy bajito. Si el gasto es razonable y queda saldo, felicítala con orgullo. Si es un ingreso o ahorro, celébralo y anímala a seguir.\n- CONSULTAR: dile cuánto le queda disponible en esa categoría. Si es 0 o negativo regaña; si queda poco, advierte; si queda bien, elogia.\n- RESUMIR: presenta el resumen del mes de esa categoría conservando las cifras exactas, y comenta como mamá (regaña si hay muchos gastos o balance negativo, elogia si va bien).\n- RESUMEN_GENERAL: presenta la lista de apartados con los saldos EXACTOS que vienen en el mensaje, uno por línea, sin cambiar ni inventar ninguna cifra. Si un apartado dice sin datos, dilo tal cual. Después comenta como mamá (regaña si hay saldos en 0 o negativos, elogia los que van bien).\n- REGLA GENERAL: NUNCA inventes saldos ni cantidades de apartados del Excel. Si el mensaje no trae saldos reales, dile que te pida la consulta de sus apartados para revisarlos.\n- REPARTIR: ya se anotó en el Excel el monto de cada categoría (una fila por categoría). Confirma con cariño la lista exacta de montos registrados y que suman lo que ella gana, sin inventar cifras. Si dice REPARTIR FALLIDO, explica que no se registró nada y pídele sus datos.\n- PRESUPUESTO/CONVERSACION: aquí NO uses el Excel ni porcentajes fijos. Tienes memoria de la conversación: usa lo que el usuario ya te contó (sueldo, gastos, metas) y combínalo con el mensaje nuevo; si te corrige algo, recalcula el plan completo con el cambio. Calcula SIEMPRE con la herramienta calculadora, nunca de cabeza.\n  REGLA CRÍTICA: el sueldo es por quincena, pero la renta, agua, luz, internet, Netflix y demás servicios son MENSUALES (cuestan eso al mes) salvo que el usuario diga otra frecuencia. Por eso SIEMPRE se dividen entre 2 para sacar el monto por quincena. Ejemplo: renta 1600 es 1600 al mes, o sea 800 por quincena (NO 1600 por quincena). Antes de contestar DEBES llamar a la herramienta calculadora para cada división y para la suma total; no escribas ninguna cifra que no hayas calculado con ella. Si la herramienta calculadora marca error, haz la cuenta con cuidado paso a paso.\n  Método: todo se expresa POR QUINCENA. Mensual / 2. Cada 2 meses / 4. Cada 3 meses / 6. Semestral (6 meses) / 12. Anual / 24. Ejemplo: 1600 al semestre = 133.33 por quincena; 200 de luz cada dos meses = 50 por quincena; 1600 de renta al mes = 800 por quincena. Si el usuario no dice cada cuánto se paga algo, supón mensual y dilo claramente. Para pagos aproximados usa la cifra dada.\n  Pasos: 1) suma los gastos fijos por quincena, 2) réstalos al sueldo por quincena, 3) lo que sobra repártelo entre las categorías sin monto fijo que pidió (regalos, personal, ahorro, mascotas, etc.) con una propuesta razonable, priorizando el ahorro, 4) muestra una lista con cada categoría y su monto por quincena (y cuánto junta al mes o al periodo si ayuda), 5) comprueba que el total sea igual al sueldo y dilo. Si los gastos fijos superan el sueldo, regaña con cariño y sugiere qué recortar. Si falta un dato importante (sueldo), pregúntalo con cariño. Al final ofrece ajustar el reparto.\n  Categorías del Excel: Renta, Servicios, Limpieza, Personal, Escuela, Regalos, Ahorro, Mascotas, Otro. Usa esos nombres cuando encajen (agua, luz, netflix y similares van en Servicios; ropa y cosas suyas en Personal), aunque puedes desglosar el detalle dentro de cada una.\n  Aquí puedes extenderte más (hasta unas 20 líneas) para que el plan quede completo.\n\nNo uses formato Markdown (nada de asteriscos ni almohadillas), solo texto plano."
+        }
+      },
+      "id": "8bde211d-fb6a-4dbb-aa49-ed5e8b244698",
+      "name": "Mamá",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1776,
+        512
+      ],
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "safetySettings": {
+            "values": []
+          }
+        }
+      },
+      "id": "f158d52b-cf7e-4ea8-a697-e127472a873e",
+      "name": "Gemini Mamá",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1792,
+        688
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KQfCxuSNGtZpGDkZ",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}-v2",
+        "contextWindowLength": 20
+      },
+      "id": "a50dfa94-a6dd-4b57-a09b-a68118c56de9",
+      "name": "Memoria de Mamá",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        1904,
+        752
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "9c9216b4-071a-46a4-8db5-e315f94a9625",
+      "name": "calculadora",
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        2032,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8777aeac-3afc-4686-8b76-c0a5fca62bdd",
+      "name": "Enviar respuesta de Mamá",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2112,
+        448
+      ],
+      "webhookId": "88e16711-b416-4086-9a07-1095ea7dfff7",
+      "credentials": {
+        "telegramApi": {
+          "id": "WWgrCOnGejyxsZbe",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=279687876#gid=279687876",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ JSON.parse($('AI Agent').item.json.output).categoria }}",
+          "mode": "name"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A1:D2"
+            }
+          }
+        }
+      },
+      "id": "78a92b4c-d628-41d5-929f-879c3780772f",
+      "name": "Get row(s) in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        672
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dtMXzeuhv6ojDUgE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ctx-consulta",
+              "name": "contexto",
+              "type": "string",
+              "value": "={{ 'Mensaje del usuario: ' + $('Telegram Trigger').item.json.message.text + '\\nACCION: CONSULTAR\\nCategoría: ' + JSON.parse($('AI Agent').item.json.output).categoria + '\\nSaldo disponible en la categoría: ' + $json.Total }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "36e24860-6785-413f-b41d-558e4747119d",
+      "name": "Contexto consulta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=279687876#gid=279687876",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ JSON.parse($('AI Agent').item.json.output).categoria }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "21595346-3962-473e-89be-4568656a7d95",
+      "name": "Get rows for summary",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        1008
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dtMXzeuhv6ojDUgE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cat = JSON.parse($('AI Agent').first().json.output).categoria;\nconst now = new Date();\nconst month = now.getMonth() + 1;\nconst year = now.getFullYear();\nconst monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];\nconst mesNombre = monthNames[month - 1];\nconst mon = { Jan:1, Feb:2, Mar:3, Apr:4, May:5, Jun:6, Jul:7, Aug:8, Sep:9, Oct:10, Nov:11, Dec:12 };\n\nfunction parseDate(f) {\n  const s = String(f || '').trim();\n  let m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\n  if (m && m[1] !== 'YYYY') return { y: +m[1], m: +m[2], d: +m[3] };\n  m = s.match(/([A-Za-z]{3}) (\\d{1,2}), (\\d{4})/);\n  if (m) return { y: +m[3], m: mon[m[1]], d: +m[2] };\n  return null;\n}\n\nconst rows = $input.all().map(i => i.json).filter(r => r.Fecha && r.Monto !== undefined && r.Monto !== '');\nconst lines = [];\nlet ingresos = 0;\nlet gastos = 0;\nfor (const r of rows) {\n  const d = parseDate(r.Fecha);\n  if (!d || d.y !== year || d.m !== month) continue;\n  const monto = Number(String(r.Monto).replace(/[^0-9.-]/g, ''));\n  if (isNaN(monto)) continue;\n  if (monto >= 0) ingresos += monto; else gastos += monto;\n  const dd = String(d.d).padStart(2, '0') + '/' + String(d.m).padStart(2, '0');\n  lines.push(dd + '  ' + (monto >= 0 ? '+' : '-') + '$' + Math.abs(monto));\n}\n\nlet text;\nif (lines.length === 0) {\n  text = '📊 Resumen de ' + cat + ' (' + mesNombre + ' ' + year + ')\\nNo hay movimientos este mes.';\n} else {\n  text = '📊 Resumen de ' + cat + ' (' + mesNombre + ' ' + year + ')\\n' + lines.join('\\n') + '\\n\\n⬆️ Ingresos: $' + ingresos + '\\n⬇️ Gastos: $' + Math.abs(gastos) + '\\n🧮 Balance del mes: $' + (ingresos + gastos);\n}\nreturn [{ json: { contexto: 'ACCION: RESUMIR\\nMensaje del usuario: ' + $('Telegram Trigger').first().json.message.text + '\\n' + text } }];"
+      },
+      "id": "fd0b1838-9cf3-4999-9f40-133ac956df76",
+      "name": "Build monthly summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ctx-presupuesto",
+              "name": "contexto",
+              "type": "string",
+              "value": "={{ 'ACCION: PRESUPUESTO/CONVERSACION (ignora el Excel)\\nMensaje del usuario: ' + $('Telegram Trigger').item.json.message.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "38d3d681-575d-4d18-bb7c-4965d4f15664",
+      "name": "Contexto presupuesto",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Telegram Trigger').item.json.message.text }}",
+        "options": {
+          "systemMessage": "Eres un extractor de datos. Lee la conversación previa y encuentra el ÚLTIMO plan de reparto de la quincena (la lista de categorías con su monto por quincena que se propuso o se ajustó). Si el usuario pidió cambios en su último mensaje, aplícalos.\n\nUsa SOLO estas categorías (nombres exactos): Renta, Servicios, Limpieza, Personal, Escuela, Regalos, Ahorro, Mascotas, Otro. Si el plan tiene una categoría que no está en la lista (por ejemplo Libre, comida, transporte), ponla en Otro. Si dos partidas caen en la misma categoría, súmalas en una sola. Los montos son números positivos por quincena, sin signo $ ni comas.\n\nDevuelve ÚNICAMENTE este JSON sin texto ni bloques de código:\n{\"items\":[{\"categoria\":\"Renta\",\"monto\":800}]}"
+        }
+      },
+      "id": "412ac73d-c417-49f8-b829-fbbc77867e4f",
+      "name": "Extraer reparto",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        0,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "safetySettings": {
+            "values": [
+              {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_NONE"
+              },
+              {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_NONE"
+              },
+              {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_NONE"
+              },
+              {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_NONE"
+              }
+            ]
+          }
+        }
+      },
+      "id": "592a22a3-5a00-4213-8e73-dccff7384499",
+      "name": "Gemini Reparto",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        1872
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KQfCxuSNGtZpGDkZ",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 20
+      },
+      "id": "c6d0ae5f-8d22-4e8d-b6c8-9e3b06ce887c",
+      "name": "Memoria reparto",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        144,
+        1872
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = String($input.first().json.output || '').replace(/```json|```/g, '').trim();\nconst valid = ['Renta','Servicios','Limpieza','Personal','Escuela','Regalos','Ahorro','Mascotas','Otro'];\nlet items = [];\ntry { items = JSON.parse(raw).items || []; } catch (e) { items = []; }\nconst out = items\n  .map(i => ({ categoria: valid.includes(i.categoria) ? i.categoria : 'Otro', monto: Number(i.monto) }))\n  .filter(i => !isNaN(i.monto) && i.monto > 0);\nif (out.length === 0) {\n  return [{ json: { vacio: true } }];\n}\nreturn out.map(i => ({ json: i }));"
+      },
+      "id": "5637cb30-3d4e-4c8c-b408-6f5784b60927",
+      "name": "Parsear reparto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        1648
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "hay-reparto",
+              "leftValue": "={{ $json.vacio === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b09fbadc-62d7-4a24-a786-75fde74d2268",
+      "name": "Hay reparto",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ctx-reparto",
+              "name": "contexto",
+              "type": "string",
+              "value": "={{ 'ACCION: REPARTIR (ya se registró en el Excel, una fila por categoría)\\nMensaje del usuario: ' + $('Telegram Trigger').item.json.message.text + '\\nMontos registrados hoy:\\n' + $('Parsear reparto').all().map(i => i.json.categoria + ': ' + i.json.monto).join('\\n') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "30b32b6e-d6b4-4243-b114-f2cb068deed1",
+      "name": "Contexto reparto",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        1488
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.categoria }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "Monto": "={{ $json.monto }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Monto",
+              "displayName": "Monto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "4e5869d9-278e-447a-9120-e6586ce176b3",
+      "name": "Registrar reparto en hoja",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        704,
+        1168
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tEZMNzKNKsHhGytn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "4c3578d4-54d5-4462-935f-9edfd364384a",
+      "name": "Uno por categoría",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        704,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ctx-reparto-vacio",
+              "name": "contexto",
+              "type": "string",
+              "value": "={{ 'ACCION: REPARTIR FALLIDO\\nMensaje del usuario: ' + $('Telegram Trigger').item.json.message.text + '\\nNo encontré un plan de reparto claro en la conversación, NADA se registró en el Excel. Pídele con cariño que te cuente primero su sueldo y gastos para armar el plan.' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4822dbf9-c600-4b4c-ab44-c1d2789405b2",
+      "name": "Contexto reparto vacío",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1088,
+        1680
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cats = ['Renta','Servicios','Limpieza','Personal','Escuela','Regalos','Ahorro','Mascotas','Otro'];\nreturn cats.map(c => ({ json: { categoria: c } }));"
+      },
+      "id": "b47e5e6e-e768-48a8-a5df-648b7599c947",
+      "name": "Lista categorías",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        2016
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cats = $('Lista categorías').all().map(i => i.json.categoria);\nconst rows = $input.all().map(i => i.json);\nconst lineas = cats.map((c, idx) => {\n  const r = rows[idx] || {};\n  const t = r.Total;\n  const ok = t !== undefined && t !== '' && !isNaN(Number(String(t).replace(/[^0-9.-]/g, '')));\n  return c + ': ' + (ok ? Number(String(t).replace(/[^0-9.-]/g, '')) : 'sin datos');\n});\nreturn [{ json: { contexto: 'ACCION: RESUMEN_GENERAL\\nMensaje del usuario: ' + $('Telegram Trigger').first().json.message.text + '\\nSaldo disponible actual en cada apartado según el Excel:\\n' + lineas.join('\\n') } }];"
+      },
+      "id": "65a3a147-40a5-434b-af31-994d0848b0df",
+      "name": "Armar saldos generales",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        2016
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cLJFNXmf4LpzHONK6IT7ZlwU9Os9IojinoCeyEqSjlk/edit?gid=279687876#gid=279687876",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.categoria }}",
+          "mode": "name"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A1:D2"
+            }
+          }
+        }
+      },
+      "id": "96fb9e61-ee1d-4b6f-8553-d68404ccab40",
+      "name": "Leer saldo de cada apartado",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1200,
+        2016
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dtMXzeuhv6ojDUgE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c7e060d8-221b-4f39-8918-66a202067434",
+      "name": "Una hoja a la vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        2160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo.last().file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        1328
+      ],
+      "id": "269c71ea-1780-4139-b132-7a6b33f58a0d",
+      "name": "Get a file",
+      "webhookId": "dabc282e-7f3f-44d1-9281-c0a3bec7c144",
+      "credentials": {
+        "telegramApi": {
+          "id": "WWgrCOnGejyxsZbe",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ee1e18f6-dcf8-41ed-98ba-942499de6252",
+              "leftValue": "={{ $json.message.photo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        928
+      ],
+      "id": "da7a77b1-25be-4512-a065-b22d8c1deade",
+      "name": "If"
     }
   ],
   "pinData": {},
@@ -289,7 +968,18 @@
       "main": [
         [
           {
-            "node": "AI Agent",
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -307,51 +997,462 @@
         ]
       ]
     },
-    "Leer_Historial_Gastos": {
-      "ai_tool": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Agent": {
+    "Switch": {
       "main": [
         [
           {
-            "node": "Send a text message",
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get rows for summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Contexto presupuesto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extraer reparto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lista categorías",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Modificar_Filas": {
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Get balance after",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get balance after": {
+      "main": [
+        [
+          {
+            "node": "Contexto registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto registro": {
+      "main": [
+        [
+          {
+            "node": "Mamá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mamá": {
+      "main": [
+        [
+          {
+            "node": "Enviar respuesta de Mamá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Mamá": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Mamá",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria de Mamá": {
+      "ai_memory": [
+        [
+          {
+            "node": "Mamá",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calculadora": {
       "ai_tool": [
         [
           {
-            "node": "AI Agent",
+            "node": "Mamá",
             "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Contexto consulta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto consulta": {
+      "main": [
+        [
+          {
+            "node": "Mamá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get rows for summary": {
+      "main": [
+        [
+          {
+            "node": "Build monthly summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build monthly summary": {
+      "main": [
+        [
+          {
+            "node": "Mamá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto presupuesto": {
+      "main": [
+        [
+          {
+            "node": "Mamá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer reparto": {
+      "main": [
+        [
+          {
+            "node": "Parsear reparto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Reparto": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extraer reparto",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria reparto": {
+      "ai_memory": [
+        [
+          {
+            "node": "Extraer reparto",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear reparto": {
+      "main": [
+        [
+          {
+            "node": "Hay reparto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay reparto": {
+      "main": [
+        [
+          {
+            "node": "Uno por categoría",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Contexto reparto vacío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto reparto": {
+      "main": [
+        [
+          {
+            "node": "Mamá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar reparto en hoja": {
+      "main": [
+        [
+          {
+            "node": "Uno por categoría",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uno por categoría": {
+      "main": [
+        [
+          {
+            "node": "Contexto reparto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar reparto en hoja",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto reparto vacío": {
+      "main": [
+        [
+          {
+            "node": "Mamá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lista categorías": {
+      "main": [
+        [
+          {
+            "node": "Una hoja a la vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar saldos generales": {
+      "main": [
+        [
+          {
+            "node": "Mamá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer saldo de cada apartado": {
+      "main": [
+        [
+          {
+            "node": "Una hoja a la vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Una hoja a la vez": {
+      "main": [
+        [
+          {
+            "node": "Armar saldos generales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Leer saldo de cada apartado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
             "index": 0
           }
         ]
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "9d42ae6a-496e-4561-861b-e142104886e4",
+  "versionId": "ebca6e3d-1022-4dc1-9ffd-671031ec21e6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "aa16815690d03a0e372b5463c82ad625cc3f306aeafc4f3e350ef919610b1e8f"
   },
-  "nodeGroups": [],
-  "id": "OJlE2eu4p66dNrxL",
+  "nodeGroups": [
+    {
+      "id": "3ef0dab7-ccf6-4966-b9e4-60f086fd93e7",
+      "name": "Entender mensaje",
+      "nodeIds": [
+        "9cc88650-1356-4ff8-a02a-c19c971f2624",
+        "3ff3f780-992c-4cd4-9d1a-ecf29f4aa512",
+        "4111509f-c007-477b-8041-7748b8c6d00d"
+      ],
+      "description": "Recibe el mensaje de Telegram y decide si es registrar, consultar, resumir o calcular reparto de ingreso"
+    },
+    {
+      "id": "d6b7b291-75d9-43a8-9f53-0a51df35e7dc",
+      "name": "Registrar movimiento",
+      "nodeIds": [
+        "fde86777-39c7-4e97-815a-46dc4ca2be0a",
+        "ad98b995-0548-479c-a0f7-0983086abb75",
+        "d2da6986-4c93-4e26-b4f5-c977f94e6d07"
+      ],
+      "description": "Anota el gasto o ingreso en su hoja y lee el saldo que queda en la categoría"
+    },
+    {
+      "id": "de8a23b7-ba9e-4888-ac8f-b82bdf6441b5",
+      "name": "Consultar saldo",
+      "nodeIds": [
+        "78a92b4c-d628-41d5-929f-879c3780772f",
+        "36e24860-6785-413f-b41d-558e4747119d"
+      ],
+      "description": "Lee cuánto dinero queda disponible en la categoría pedida"
+    },
+    {
+      "id": "eadd7b9e-a24c-49b9-be92-5006fa881a91",
+      "name": "Armar resumen mensual",
+      "nodeIds": [
+        "21595346-3962-473e-89be-4568656a7d95",
+        "fd0b1838-9cf3-4999-9f40-133ac956df76"
+      ],
+      "description": "Junta los movimientos del mes de una categoría con ingresos, gastos y balance"
+    },
+    {
+      "id": "aa972d89-fd2e-45a0-9450-2132ba00d706",
+      "name": "Repartir quincena",
+      "nodeIds": [
+        "412ac73d-c417-49f8-b829-fbbc77867e4f",
+        "592a22a3-5a00-4213-8e73-dccff7384499",
+        "c6d0ae5f-8d22-4e8d-b6c8-9e3b06ce887c",
+        "5637cb30-3d4e-4c8c-b408-6f5784b60927"
+      ],
+      "description": "Lee el plan acordado en la charla y lo convierte en montos por categoría para anotarlos"
+    },
+    {
+      "id": "218febf2-916a-408d-8bc6-27ad21789fa8",
+      "name": "Resumen de apartados",
+      "nodeIds": [
+        "b47e5e6e-e768-48a8-a5df-648b7599c947",
+        "c7e060d8-221b-4f39-8918-66a202067434",
+        "96fb9e61-ee1d-4b6f-8553-d68404ccab40",
+        "65a3a147-40a5-434b-af31-994d0848b0df"
+      ],
+      "description": "Lee el saldo real de cada hoja del Excel para dar el panorama general de todos los apartados"
+    },
+    {
+      "id": "8a567b33-bb4c-4467-b4ca-344a9827bcab",
+      "name": "Responder como mamá",
+      "nodeIds": [
+        "8bde211d-fb6a-4dbb-aa49-ed5e8b244698",
+        "f158d52b-cf7e-4ea8-a697-e127472a873e",
+        "a50dfa94-a6dd-4b57-a09b-a68118c56de9",
+        "9c9216b4-071a-46a4-8db5-e315f94a9625",
+        "8777aeac-3afc-4686-8b76-c0a5fca62bdd"
+      ],
+      "description": "Convierte los datos en un mensaje de mamá mexicana, con regaños o elogios, y lo envía por Telegram"
+    }
+  ],
+  "id": "wp11nOh0GUFDZAQX",
   "tags": []
 }

@@ -1,4 +1,6 @@
-# Asistente Financiero Personal con n8n
+# Asistente Financiero Personal Doña Cinthia con n8n
+
+**Doña Cinthia** es una asistente financiera personal que ayuda a organizar el dinero desde Telegram con un trato cercano y maternal. Puede registrar ingresos y gastos a partir de mensajes o fotos de tickets, consultar saldos y resúmenes de las categorías, y ayudar a planear y repartir el presupuesto de cada quincena. Así, el usuario puede llevar un mejor control de sus finanzas y recibir orientación cuando sus gastos afectan el dinero disponible.
 
 Este proyecto implementa un flujo de trabajo automatizado en **n8n** que funciona como un asistente financiero personal interactivo a través de **Telegram**. El sistema utiliza una arquitectura multi-agente impulsada por **Google Gemini** (`models/gemini-3.5-flash-lite`) para clasificar intenciones, procesar tanto mensajes de texto como fotografías de tickets de compra, gestionar presupuestos quincenales y registrar cada movimiento en una hoja de cálculo de **Google Sheets** dividida por apartados.
 
@@ -143,9 +145,9 @@ En las siguientes capturas de pantalla se demuestra la interacción real en Tele
 
 ## Instalación y Puesta en Marcha
 
-1. Descarga el archivo [`GurúCinthia v2.0.json`](./GurúCinthia%20v2.0.json) incluido en este repositorio.
+1. Descarga el archivo [`Proyecto.json`](./Proyecto.json) incluido en este repositorio.
 2. En tu panel de **n8n**, crea un nuevo flujo de trabajo y selecciona **Import from File** en el menú superior derecho.
-3. Selecciona el archivo `GurúCinthia v2.0.json`.
+3. Selecciona el archivo `Proyecto.json`.
 4. Configura tus propias credenciales en los nodos correspondientes:
    - `Telegram Trigger`, `Get a file` y `Enviar respuesta de Mamá` (Token de tu bot de Telegram).
    - `Google Gemini Chat Model`, `Gemini Mamá` y `Gemini Reparto` (API Key de Google AI Studio / Gemini).
